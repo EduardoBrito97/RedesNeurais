@@ -1,13 +1,15 @@
 import mnist_loader
 import network
+import csv
 
 training_data, validation_data, test_data = mnist_loader.load_data_wrapper()
 
 HIDDEN_LAYERS = [1, 2, 3, 4]
 HIDDEN_NEURONS = [30, 60, 120, 240]
 LEARNING_RATE = [0.001, 0.01, 0.1, 1.0]
-EPOCHS = 3
+EPOCHS = 2
 BATCH_SIZE = [4, 8, 16]
+BATCH_SIZE = [4, 8]
 
 for hn in HIDDEN_NEURONS:
     net_input = []
@@ -32,6 +34,14 @@ for hn in HIDDEN_NEURONS:
 
                 net_settings.append(sett)
                 print(sett)
-                exit()
+            
+            with open('lucaspontes.csv', 'w+') as dictwriter:
+                fieldnames = sett.keys()
+                writer = csv.DictWriter(dictwriter, fieldnames=fieldnames)
 
+                writer.writeheader()
+
+                for row in net_settings:
+                    writer.writerow(row)
+            exit()
         net_input = net_input[:-1]

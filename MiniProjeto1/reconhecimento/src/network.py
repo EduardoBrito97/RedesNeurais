@@ -65,11 +65,10 @@ class Network(object):
             if test_data:
                 print "Epoch {0}: {1} / {2}".format(
                     j, self.evaluate(test_data), n_test)
-                accuracies.append(self.evaluate(test_data) / n_test)
+                accuracies.append(self.evaluate(test_data) / float(n_test))
             else:
                 print "Epoch {0} complete".format(j)
 
-        breakpoint()
         return max(accuracies)
         
 
