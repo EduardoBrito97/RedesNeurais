@@ -1,0 +1,3 @@
+# Reconhecimento de Dígitos Utilizando MLP
+O código utilizado no treinamento é proveniente do repositório https://github.com/mnielsen/neural-networks-and-deep-learning. Adaptado para o intuito da cadeira, foi adicionado os scripts evaluation.py e graphs.py, para treinar a rede e gerar gráficos dos resultados.
+O relatório e os arquivos necessários para o PDF estão disponíveis no diretório 'Relatório'. 
