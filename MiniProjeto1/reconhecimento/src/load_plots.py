@@ -13,5 +13,5 @@ if __name__ == '__main__':
             df = pd.read_csv(fileName)
             b_size = pow(2,int(batchSizeIndex)+2)
             data = df[df['Batch Size']==b_size]
-            sns.lineplot(x='Learning Rate', y='Accuracy', hue='Hidden Layers', palette=['red','yellow','blue', 'black'],data=data)
+            sns.scatterplot(x='Learning Rate', y='Accuracy', hue='Hidden Layers', s=30, palette=['red','green','blue', 'black'], data=data, marker="+", legend="full")
             plt.savefig('Graphs/' + fileName + ' - ' + 'Batch'+str(b_size)+'.png')
