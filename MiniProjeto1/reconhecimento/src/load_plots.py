@@ -4,11 +4,14 @@ import matplotlib.pyplot as plt
 import sys
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
-        print('Usage: load_plots.py [batch_index=0,1 or 2] [path_to_csv]')
-        exit(1)
-    df = pd.read_csv(sys.argv[2])
-    b_size = pow(2,int(sys.argv[1])+2)
-    data= df[df['Batch Size']==b_size]
-    sns.lineplot(x='Learning Rate', y='Accuracy', hue='Hidden Layers', palette=['red','yellow','blue', 'black'],data=data)
-    plt.savefig('Batch'+str(b_size)+'.png')
+    files = ["results_30hn.csv", "results_60hn.csv", "results_60ep_30hn.csv", "results_60ep_60hn.csv"]
+    batchSizeIndexes = [0, 1, 2]
+
+    for fileName in files:
+        for batchSizeIndex in batchSizeIndexes:
+            plt.figure()
+            df = pd.read_csv(fileName)
+            b_size = pow(2,int(batchSizeIndex)+2)
+            data = df[df['Batch Size']==b_size]
+            sns.lineplot(x='Learning Rate', y='Accuracy', hue='Hidden Layers', palette=['red','yellow','blue', 'black'],data=data)
+            plt.savefig('Graphs/' + fileName + ' - ' + 'Batch'+str(b_size)+'.png')
