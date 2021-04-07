@@ -45,7 +45,7 @@ def print_metrics_summary(mse, accuracy, recall, precision, f1, auroc=None, aupr
         print("{metric:<18}{value:.4f}".format(metric="AUPR:", value=aupr))
 
 ## Lê datasest, usando a primeira coluna como índice
-df = pd.read_csv('readyData/readyDataTrain.csv', index_col=0)
+df = pd.read_csv('../readyData/readyDataTrain.csv', index_col=0)
 ## Divide Label para y e atributos para X
 X, y = df.drop(['PROPHET_LABEL'], axis=1), df['PROPHET_LABEL']
 
