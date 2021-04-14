@@ -5,63 +5,45 @@ from sklearn.utils import shuffle
 
 def get_data():
 
-    ## Pega todos os dados de treino (variáveis normalizadas e não normalizadas)
-    originalTrain = pd.read_csv('originalData/BASE-PREPROCESSED(TRAIN)', sep='\t', engine='python')
-    ## Pega o que vai ser útil pra treino (variáveis normalizadas)
-    usefulTrain = originalTrain.loc[:, ['PROPHET_LABEL', 'PROPHET_NORM_FEATURES']]
-    ## Pega todos os dados de validação (variáveis normalizadas e não normalizadas)
-    originalValid = pd.read_csv('originalData/BASE-PREPROCESSED(VALIDACAO)', sep='\t', engine='python')
-    ## Pega o que vai ser útil pra validação (variáveis normalizadas)
-    usefulValid = originalValid.loc[:, ['PROPHET_LABEL', 'PROPHET_NORM_FEATURES']]
-    
-    aux = []
-    ## As entradas das variáveis de entrada são vistas como string, mas queremos transformá-las em listas de float
-    ## Eliminamos primeiro os colchetes que envolvem a string pra cada entrada
-    usefulTrain.loc[:, 'PROPHET_NORM_FEATURES'] = usefulTrain.loc[:, 'PROPHET_NORM_FEATURES'].apply(lambda x: x.replace('[', ''))
-    usefulTrain.loc[:, 'PROPHET_NORM_FEATURES'] = usefulTrain.loc[:, 'PROPHET_NORM_FEATURES'].apply(lambda x: x.replace(']', ''))
-    ## Transformamos a string em lista, separando a string nas virgúlas
-    usefulTrain.loc[:, 'PROPHET_NORM_FEATURES'] = usefulTrain.loc[:, 'PROPHET_NORM_FEATURES'].apply(lambda x: x.split(','))
-    ## Transforma todos os elementos das listas de todas as entradas em float
-    usefulTrain.loc[:, 'PROPHET_NORM_FEATURES'] = usefulTrain.loc[:, 'PROPHET_NORM_FEATURES'].apply(lambda x: np.array(x, dtype=np.float64))
-    ## Transforma as listas que se encontram em cada linha do dataframe em colunas(cada valor em cada coluna)
-    for label, content in tqdm(usefulTrain[['PROPHET_NORM_FEATURES']].iterrows()):
-        aux.append(content['PROPHET_NORM_FEATURES'])
-    
-    aux = pd.DataFrame(aux)
-    aux.insert(0, 'PROPHET_LABEL', usefulTrain['PROPHET_LABEL'])
-    usefulTrain = aux
-    
-    aux = []
-    ## Eliminamos primeiro os colchetes que envolvem a string pra cada entrada
-    usefulValid.loc[:, 'PROPHET_NORM_FEATURES'] = usefulValid.loc[:, 'PROPHET_NORM_FEATURES'].apply(lambda x: x.replace('[', ''))
-    usefulValid.loc[:, 'PROPHET_NORM_FEATURES'] = usefulValid.loc[:, 'PROPHET_NORM_FEATURES'].apply(lambda x: x.replace(']', ''))
-    ## Transformamos a string em lista, separando a string nas virgúlas
-    usefulValid.loc[:, 'PROPHET_NORM_FEATURES'] = usefulValid.loc[:, 'PROPHET_NORM_FEATURES'].apply(lambda x: x.split(','))
-    ## Transforma todos os elementos das listas de todas as entradas em float
-    usefulValid.loc[:, 'PROPHET_NORM_FEATURES'] = usefulValid.loc[:, 'PROPHET_NORM_FEATURES'].apply(lambda x: np.array(x, dtype=np.float32))
-    ## Transforma as listas que se encontram em cada linha do dataframe em colunas(cada valor em cada coluna)
-    for label, content in tqdm(usefulValid[['PROPHET_NORM_FEATURES']].iterrows()):
-        aux.append(content['PROPHET_NORM_FEATURES'])
-    
-    aux = pd.DataFrame(aux)
-    aux.insert(0, 'PROPHET_LABEL', usefulValid['PROPHET_LABEL'])
-    usefulValid = aux
+    ## Lê dados de traino
+    originalTrain = pd.read_csv('../originalData/BASE-PREPROCESSED(TRAIN)', sep='\t', engine='python')
+    ## Dropa colunas PROPHET_LABEL e PROPHET_NORM_FEATURES
+    originalTrain = originalTrain.drop(['PROPHET_LABEL', 'PROPHET_NORM_FEATURES'], axis=1)
+    ## Lê dados de validação
+    originalValid = pd.read_csv('../originalData/BASE-PREPROCESSED(VALIDACAO)', sep='\t', engine='python')
+    ## Dropa colunas PROPHET_LABEL e PROPHET_NORM_FEATURES
+    originalValid = originalValid.drop(['PROPHET_LABEL', 'PROPHET_NORM_FEATURES'], axis=1)
+    ## Lê dados de teste
+    originalTest = pd.read_csv('../originalData/BASE-PREPROCESSED(TESTE)', sep='\t', engine='python')
+    ## Dropa colunas PROPHET_LABEL e PROPHET_NORM_FEATURES
+    originalTest = originalTest.drop(['PROPHET_LABEL', 'PROPHET_NORM_FEATURES'], axis=1)
 
-    return usefulTrain, usefulValid
+    ## Só usamos as colunas(atributos) comuns entre datasets de treino e validação
+    usefulTrain = originalTrain[originalTrain.columns.intersection(originalValid.columns)]
+    usefulValid = originalValid[originalTrain.columns.intersection(originalValid.columns)]
+    usefulTest = originalTest[originalTrain.columns.intersection(originalValid.columns)]
+
+    return usefulTrain, usefulValid, usefulTest
 
 def oversampling(majorClassSize, minorClass):
 
+    ## Quantas vezes devemos aumentar nossa classe minoritária
     limit = majorClassSize - minorClass.shape[0]
+    ## Copia nosso dataframe em formato numpy array por questões de eficiência
+    minorClassValues = minorClass.values
 
     for entry in tqdm(range(0, limit)):
-        minorClass = minorClass.append(minorClass.iloc[entry, :])
+        minorClassValues = np.append(minorClassValues, [minorClassValues[entry]], axis=0)
+
+    ## Copia o nosso numpy array de volta para dataframe
+    minorClass = pd.DataFrame(minorClassValues, columns=minorClass.columns)
 
     return minorClass
 
 def separateClasses(data):
 
-    class1 = data.loc[data['PROPHET_LABEL'] == 0]
-    class2 = data.loc[data['PROPHET_LABEL'] == 1]
+    class1 = data.loc[data['ALVO'] == 1]
+    class2 = data.loc[data['ALVO'] == 0]
 
     return class1, class2
 
@@ -73,9 +55,9 @@ def joinAndShuffle(class1, class2):
     return class1
 
 ## importa dados
-usefulTrain, usefulValid = get_data()
+usefulTrain, usefulValid, usefulTest = get_data()
 
-## separa classes majoritária e minoritária (sempre majoritária 0 e minoritária 1)
+## separa classes majoritária e minoritária (para os nossos datasets majoritária 1 e minoritária 0)
 majorClassTrain, minorClassTrain = separateClasses(usefulTrain)
 majorClassValid, minorClassValid = separateClasses(usefulValid)
 
@@ -91,5 +73,6 @@ readyDataValid = joinAndShuffle(majorClassValid, minorClassValid)
 readyDataTrain = readyDataTrain.reset_index(drop=True)
 readyDataValid = readyDataValid.reset_index(drop=True)
 
-readyDataTrain.to_csv('readyData/readyDataTrain.csv')
-readyDataValid.to_csv('readyData/readyDataValid.csv')
+readyDataTrain.to_csv('../readyData/readyDataTrain.csv')
+readyDataValid.to_csv('../readyData/readyDataValid.csv')
+usefulTest.to_csv('../readyData/readyDataTest.csv')
