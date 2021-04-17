@@ -7,6 +7,7 @@ from sklearn.metrics import plot_confusion_matrix
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, mean_squared_error
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
 
 import scikitplot as skplt
 from matplotlib import pyplot as plt
@@ -43,39 +44,19 @@ def print_metrics_summary(mse, accuracy, recall, precision, f1, auroc=None, aupr
     if aupr is not None:
         print("{metric:<18}{value:.4f}".format(metric="AUPR:", value=aupr))
 
-<<<<<<< HEAD
-def get_data():
-=======
-## Lê datasest, usando a primeira coluna como índice
-df = pd.read_csv('../readyData/readyDataTrain.csv', index_col=0)
-## Divide Label para y e atributos para X
-X, y = df.drop(['PROPHET_LABEL'], axis=1), df['PROPHET_LABEL']
->>>>>>> 731a556fa6c37ede370abbbcdacc7a38abf70b4a
+def get_data(path_atributes, path_labels):
 
-    ## Lê dados de traino usando a primeira coluna como índice
-    df = pd.read_csv('../readyData/readyDataTrain.csv', index_col=0)
-    ## Divide Label para y e atributos para X
-    X_train, y_train = df.drop(['ALVO'], axis=1), df['ALVO']
-
-    ## Lê dados de validação usando a primeira coluna como índice
-    df = pd.read_csv('../readyData/readyDataValid.csv', index_col=0)
-
-    ## Concatena dados de validação e treino já que usaremos cross-validation
-    X_train = pd.concat([X_train, df.drop(['ALVO'], axis=1)], ignore_index=True)
-    y_train = pd.concat([y_train, df['ALVO']], ignore_index=True)
-
-    ## Lê dados de teste usando a primeira coluna como índice
-    df = pd.read_csv('../readyData/readyDataTest.csv', index_col=0)
-    ## Divide Label para y e atributos para X
-    X_test, y_test = df.drop(['ALVO'], axis=1), df['ALVO']
+    y = pd.read_csv(path_labels, index_col=0).values.squeeze()
+    X = StandardScaler().fit_transform(pd.read_csv(path_atributes, index_col=0))
     
-    return X_train, y_train, X_test, y_test
+    return X, y
 
 ## Lê dados
-X_train, y_train, X_test, y_test = get_data()
+X_train, y_train = get_data('../data/X_train_over.csv', '../data/y_train_over.csv')
+X_test, y_test = get_data('../data/X_test.csv', '../data/y_test.csv')
 
 ## inicializar um classificador (daqui pra baixo é padrão pra todos classificadores do scikitlearn)
-rfc = RandomForestClassifier(n_estimators=10)
+rfc = RandomForestClassifier(n_estimators=100, verbose=True)
 ## quantos folds no cross-validation e o tamanho do fold de test
 cv = ShuffleSplit(n_splits=5, test_size=0.33, random_state=0)
 ## faz o cross-validation e guarda cada modelo (5 folds, 5 treinos, 5 modelos)
@@ -88,6 +69,7 @@ bestRfc = scores['estimator'][np.argmax(scores['test_score'])]
 y_pred = bestRfc.predict(X_test)
 y_pred_scores = bestRfc.predict_proba(X_test)
 ## as funções abaixo foram copiadas do github que o proferssor indica no site, exceto pela parte de mse e matriz de confusão
+
 mse, accuracy, recall, precision, f1, auroc, aupr = compute_performance_metrics(y_test.round(), y_pred, y_pred_scores)
 print('Performance no conjunto de teste:')
 print_metrics_summary(mse, accuracy, recall, precision, f1, auroc, aupr)

@@ -7,6 +7,7 @@ from sklearn.metrics import plot_confusion_matrix
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score, mean_squared_error
 from sklearn.metrics import roc_auc_score, average_precision_score
 from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
 
 import scikitplot as skplt
 from matplotlib import pyplot as plt
@@ -43,29 +44,16 @@ def print_metrics_summary(mse, accuracy, recall, precision, f1, auroc=None, aupr
     if aupr is not None:
         print("{metric:<18}{value:.4f}".format(metric="AUPR:", value=aupr))
 
-def get_data():
+def get_data(path_atributes, path_labels):
 
-    ## Lê dados de traino usando a primeira coluna como índice
-    df = pd.read_csv('../readyData/readyDataTrain.csv', index_col=0)
-    ## Divide Label para y e atributos para X
-    X_train, y_train = df.drop(['ALVO'], axis=1), df['ALVO']
-
-    ## Lê dados de validação usando a primeira coluna como índice
-    df = pd.read_csv('../readyData/readyDataValid.csv', index_col=0)
-
-    ## Concatena dados de validação e treino já que usaremos cross-validation
-    X_train = pd.concat([X_train, df.drop(['ALVO'], axis=1)], ignore_index=True)
-    y_train = pd.concat([y_train, df['ALVO']], ignore_index=True)
-
-    ## Lê dados de teste usando a primeira coluna como índice
-    df = pd.read_csv('../readyData/readyDataTest.csv', index_col=0)
-    ## Divide Label para y e atributos para X
-    X_test, y_test = df.drop(['ALVO'], axis=1), df['ALVO']
+    y = pd.read_csv(path_labels, index_col=0).values.squeeze()
+    X = StandardScaler().fit_transform(pd.read_csv(path_atributes, index_col=0))
     
-    return X_train, y_train, X_test, y_test
+    return X, y
 
 ## Lê dados
-X_train, y_train, X_test, y_test = get_data()
+X_train, y_train = get_data('../data/X_train_over.csv', '../data/y_train_over.csv')
+X_test, y_test = get_data('../data/X_test.csv', '../data/y_test.csv')
 
 ## inicializar um classificador (daqui pra baixo é padrão pra todos classificadores do scikitlearn)
 svc = SVC(kernel='linear', probability=True)
