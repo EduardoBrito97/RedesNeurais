@@ -47,8 +47,8 @@ train_dataset = data.DataLoader(dataset=train_dataset_loader, batch_size=BATCH_S
 valid_dataset_loader = Dataset('../data/X_valid.csv', '../data/y_valid.csv')
 valid_dataset = data.DataLoader(dataset=valid_dataset_loader, batch_size=BATCH_SIZE, shuffle=True, drop_last=True)
 
-#DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-DEVICE = torch.device('cpu')
+DEVICE = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
 net = Net().to(DEVICE)
 optmizer = optim.Adam(net.parameters(), lr=0.0005)
 critirion = nn.MSELoss()
