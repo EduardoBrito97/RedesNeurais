@@ -8,15 +8,15 @@ from imblearn.under_sampling import RandomUnderSampler
 def get_data():
 
     ## Lê dados de traino
-    originalTrain = pd.read_csv('../data/BASE-PREPROCESSED(TRAIN)', sep='\t', engine='python', nrows=5000)
+    originalTrain = pd.read_csv('../data/BASE-PREPROCESSED(TRAIN)', sep='\t', engine='python')
     ## Dropa colunas PROPHET_LABEL e PROPHET_NORM_FEATURES
     originalTrain = originalTrain.drop(['PROPHET_LABEL', 'PROPHET_NORM_FEATURES', 'NEURO_LABEL'], axis=1)
     ## Lê dados de validação
-    originalValid = pd.read_csv('../data/BASE-PREPROCESSED(VALIDACAO)', sep='\t', engine='python', nrows=2500)
+    originalValid = pd.read_csv('../data/BASE-PREPROCESSED(VALIDACAO)', sep='\t', engine='python')
     ## Dropa colunas PROPHET_LABEL e PROPHET_NORM_FEATURES
     originalValid = originalValid.drop(['PROPHET_LABEL', 'PROPHET_NORM_FEATURES', 'NEURO_LABEL'], axis=1)
     ## Lê dados de teste
-    originalTest = pd.read_csv('../data/BASE-PREPROCESSED(TESTE)', sep='\t', engine='python', nrows=2500)
+    originalTest = pd.read_csv('../data/BASE-PREPROCESSED(TESTE)', sep='\t', engine='python')
     ## Dropa colunas PROPHET_LABEL e PROPHET_NORM_FEATURES
     originalTest = originalTest.drop(['PROPHET_LABEL', 'PROPHET_NORM_FEATURES', 'NEURO_LABEL'], axis=1)
 
