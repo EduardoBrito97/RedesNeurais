@@ -1,8 +1,8 @@
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.wrappers.scikit_learn import KerasClassifier
-from keras.optimizers import Adam
+import numpy as np
+import pandas as pd
 
+from sklearn.neural_network import MLPClassifier
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score, recall_score, precision_score, f1_score
 from sklearn.metrics import roc_auc_score, average_precision_score
@@ -11,15 +11,6 @@ from sklearn.ensemble import VotingClassifier
 import scikitplot as skplt
 import matplotlib
 import matplotlib.pyplot as plt
-
-def create_sklearn_compatible_model(hidden_layers = 1, hidden_neurons = 10, learning_rate = 0.01):
-    model = Sequential()
-    for _ in range(hidden_layers):
-        model.add(Dense(hidden_neurons, activation='tanh', input_dim=input_dim))
-    model.add(Dense(1, activation='sigmoid'))
-    
-    model.compile(optimizer=Adam(learning_rate=learning_rate), loss='mean_squared_error')
-    return model
 
 def compute_performance_metrics(y, y_pred_class, y_pred_scores=None):
     accuracy = accuracy_score(y, y_pred_class)
@@ -47,31 +38,47 @@ def print_metrics_summary(accuracy, recall, precision, f1, auroc=None, aupr=None
     if aupr is not None:
         print("{metric:<18}{value:.4f}".format(metric="AUPR:", value=aupr))
 
+def get_data(path_atributes, path_labels):
+
+    y = pd.read_csv(path_labels, index_col=0).values.squeeze()
+    X = StandardScaler().fit_transform(pd.read_csv(path_atributes, index_col=0))
+    
+    return X, y
+
 ## Lê dados
 X_train, y_train = get_data('../data/X_train_over.csv', '../data/y_train_over.csv')
 X_test, y_test = get_data('../data/X_test.csv', '../data/y_test.csv')
 
 # Cria o dicionário com diferentes mlps para o ensemble
-mlps_clf = {}
 
 hidden_layers = [1, 2, 3]
 hidden_neurons = [10, 20]
 learning_rates = [0.001, 0.01, 0.1]
+index = 0
+
+mlps_clf = []
 
 for hl in hidden_layers:
     for hn in hidden_neurons:
         for lr in learning_rates:
-            dict_key = 'mlp_hl-{hl}_hn-{hn}_lr-{lr}'
+            hidden_layers_size = (hn)
+            if hl == 2:
+                hidden_layers_size = (hn, hn)
+            elif hl == 3:
+                hidden_layers_size = (hn, hn, hn)
+
             # Para cada valor de learning rate, hidden neurons e hidden layers, cria um modelo e atribui à legenda
-            mlps_clf[dict_key] = KerasClassifier(build_fn=create_sklearn_compatible_model, 
-                                hidden_layers = hl,
-                                hidden_neurons = hn,
-                                learning_rate = lr,
-                                batch_size=64,
-                                epochs=100,
-                                verbose=0)
+            mlp_ens_clf = MLPClassifier(hidden_layer_sizes=hidden_layers_size,
+                                        activation='relu',
+                                        learning_rate_init=lr,
+                                        learning_rate='constant',
+                                        max_iter=100,
+                                        )
+            mlp_alias = 'mlp_hl-' + str(hl) + '_hn-' + str(hn) + '_lr-' + str(lr)
+            mlps_clf.append( (mlp_alias, mlp_ens_clf) )
+
 # Crias o Ensemble
-mlp_ens = VotingClassifier([mlps_clf], voting='soft')
+mlp_ens = VotingClassifier(mlps_clf, voting='soft')
 
 # Treina o Ensemble
 mlp_ens.fit(X_train, y_train)
