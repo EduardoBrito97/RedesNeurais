@@ -69,7 +69,6 @@ bestRfc = scores['estimator'][np.argmax(scores['test_score'])]
 y_pred = bestRfc.predict(X_test)
 y_pred_scores = bestRfc.predict_proba(X_test)
 ## as funções abaixo foram copiadas do github que o proferssor indica no site, exceto pela parte de mse e matriz de confusão
-
 mse, accuracy, recall, precision, f1, auroc, aupr = compute_performance_metrics(y_test.round(), y_pred, y_pred_scores)
 print('Performance no conjunto de teste:')
 print_metrics_summary(mse, accuracy, recall, precision, f1, auroc, aupr)
