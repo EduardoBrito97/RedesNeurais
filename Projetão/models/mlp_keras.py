@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 
-from keras.models import Sequential
+from keras.models import Sequential, load_model
 from keras.layers import Dense
 from keras.callbacks import EarlyStopping
 from keras.wrappers.scikit_learn import KerasClassifier
 
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import mean_squared_error, accuracy_score, recall_score, precision_score, f1_score
@@ -62,7 +62,7 @@ def compute_performance_metrics(y, y_pred_class, y_pred_scores=None):
     performance_metrics = (mse, accuracy, recall, precision, f1)
     if y_pred_scores is not None:
         skplt.metrics.plot_ks_statistic(y, y_pred_scores)
-        plt.savefig('../results/mlp/plots/BS' + str(bs) + 'HL' + str(hl) + 'HN' + str(hn) + 'LR' + str(int(lr * 10000)) + optimizer + '_KS.png')
+        plt.savefig('../results/mlp_autoencoder/plots/BS' + str(bs) + 'HL' + str(hl) + 'HN' + str(hn) + 'LR' + str(int(lr * 10000)) + optimizer + '_KS.png')
         plt.clf()
         y_pred_scores = y_pred_scores[:, 1]
         auroc = roc_auc_score(y, y_pred_scores)
@@ -84,7 +84,7 @@ def print_metrics_summary(mse, accuracy, recall, precision, f1, auroc=None, aupr
 
 def get_data(path_atributes, path_labels):
 
-    y = pd.read_csv(path_labels, index_col=0).values
+    y = pd.read_csv(path_labels, index_col=0).values.squeeze()
     X = pd.read_csv(path_atributes, index_col=0).values
     
     return X, y 
@@ -93,14 +93,19 @@ X_train, y_train = get_data('../data/X_train_over.csv', '../data/y_train_over.cs
 X_val, y_val = get_data('../data/X_valid.csv', '../data/y_valid.csv')
 X_test, y_test = get_data('../data/X_test.csv', '../data/y_test.csv')
 
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 X_train = scaler.fit_transform(X_train)
 X_val = scaler.transform(X_val)
 X_test = scaler.transform(X_test)
 
+encoder = load_model('autoencoder.h5')
+X_train = encoder.predict(X_train)
+X_val = encoder.predict(X_val)
+X_test = encoder.predict(X_test)
+
 input_dim = X_train.shape[1]
 
-batch_size = [64, 256, 512]
+batch_size = [1024, 2048, 4096]
 hidden_layers = [1, 2, 3]
 hidden_neurons = [20, 40]
 learning_rates = [0.0001, 0.001, 0.01, 0.1]
@@ -123,12 +128,11 @@ for bs in batch_size:
                     classifier.compile(optimizer=optimizer, loss='mean_squared_error')
 
                     mlp_clf = KerasClassifier(build_fn=lambda: classifier)
-                    
-                    mlp_clf.fit(X_train, y_train, batch_size=bs, verbose=0, epochs=100000, callbacks=[EarlyStopping(patience=3)], validation_data=(X_val, y_val))
+                    mlp_clf.fit(X_train, y_train, batch_size=bs, verbose=0, callbacks=[EarlyStopping(patience=5)], epochs=100000, validation_data=(X_val, y_val))
 
                     y_pred = mlp_clf.predict(X_test)
                     y_pred_scores = mlp_clf.predict_proba(X_test)
-                    mse, accuracy, recall, precision, f1, auroc, aupr = compute_performance_metrics(y_test.squeeze(), y_pred.squeeze(), y_pred_scores)
+                    mse, accuracy, recall, precision, f1, auroc, aupr = compute_performance_metrics(y_test, y_pred.squeeze(), y_pred_scores)
                     results['BS'].append(bs)
                     results['HL'].append(hl)
                     results['HN'].append(hn)
@@ -145,8 +149,8 @@ for bs in batch_size:
                     print('Performance BS' + str(bs) + 'HL' + str(hl) + 'HN' + str(hn) + 'LR' + str(lr) + optimizer)
                     print_metrics_summary(mse, accuracy, recall, precision, f1, auroc, aupr)
                     sns.heatmap(confusion_matrix(y_test, y_pred), annot=True)
-                    plt.savefig('../results/mlp/plots/BS' + str(bs) + 'HL' + str(hl) + 'HN' + str(hn) + 'LR' + str(int(lr * 10000)) + optimizer + '_confusion_matrix.png')
+                    plt.savefig('../results/mlp_autoencoder/plots/BS' + str(bs) + 'HL' + str(hl) + 'HN' + str(hn) + 'LR' + str(int(lr * 10000)) + optimizer + '_confusion_matrix.png')
                     plt.clf()
 
 data = pd.DataFrame(results)
-data.to_csv('../results/mlp/results.csv')
+data.to_csv('../results/mlp_autoencoder/results.csv')
