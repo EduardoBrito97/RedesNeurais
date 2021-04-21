@@ -56,7 +56,7 @@ X_train, y_train = get_data('../data/X_train_over.csv', '../data/y_train_over.cs
 X_test, y_test = get_data('../data/X_test.csv', '../data/y_test.csv')
 
 ## inicializar um classificador (daqui pra baixo é padrão pra todos classificadores do scikitlearn)
-svc = SVC(kernel='linear', probability=True)
+svc = SVC(kernel='rbf', probability=True, verbose=1)
 ## quantos folds no cross-validation e o tamanho do fold de test
 cv = ShuffleSplit(n_splits=5, test_size=0.33, random_state=0)
 ## faz o cross-validation e guarda cada modelo (5 folds, 5 treinos, 5 modelos)
