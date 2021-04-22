@@ -12,7 +12,9 @@ from sklearn.preprocessing import StandardScaler
 import scikitplot as skplt
 from matplotlib import pyplot as plt
 
-def compute_performance_metrics(y, y_pred_class, y_pred_scores=None):
+import seaborn as sns
+
+def compute_performance_metrics(y, y_pred_class, y_pred_scores=None, estimator = None, depth = None):
 
     mse = mean_squared_error(y, y_pred_class)
     accuracy = accuracy_score(y, y_pred_class)
@@ -22,7 +24,8 @@ def compute_performance_metrics(y, y_pred_class, y_pred_scores=None):
     performance_metrics = (mse, accuracy, recall, precision, f1)
     if y_pred_scores is not None:
         skplt.metrics.plot_ks_statistic(y, y_pred_scores)
-        plt.show()
+        plt.savefig('../results/randomForest/plots/Estimator-' + str(estimator) + '_depth-' + str(depth) + '_KS.png')
+        plt.clf()
         y_pred_scores = y_pred_scores[:, 1]
         auroc = roc_auc_score(y, y_pred_scores)
         aupr = average_precision_score(y, y_pred_scores)
@@ -56,7 +59,7 @@ X_train, y_train = get_data('../data/X_train_over.csv', '../data/y_train_over.cs
 X_test, y_test = get_data('../data/X_test.csv', '../data/y_test.csv')
 
 ## inicializar um classificador (daqui pra baixo é padrão pra todos classificadores do scikitlearn)
-gbc = GradientBoostingClassifier(n_estimators=100)
+gbc = GradientBoostingClassifier(n_estimators=10)
 ## quantos folds no cross-validation e o tamanho do fold de test
 cv = ShuffleSplit(n_splits=5, test_size=0.33, random_state=0)
 ## faz o cross-validation e guarda cada modelo (5 folds, 5 treinos, 5 modelos)
