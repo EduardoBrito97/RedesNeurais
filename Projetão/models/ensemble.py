@@ -80,8 +80,8 @@ cv = ShuffleSplit(n_splits=5, test_size=0.33, random_state=0)
 scores = cross_validate(ensemble, X_train, y_train.round(), cv=cv, return_estimator=True)
 
 bestGbc = scores['estimator'][np.argmax(scores['test_score'])]
-y_pred = bestRfc.predict(X_test)
-y_pred_scores = bestRfc.predict_proba(X_test)
+y_pred = bestGbc.predict(X_test)
+y_pred_scores = bestGbc.predict_proba(X_test)
 
 mse, accuracy, recall, precision, f1, auroc, aupr = compute_performance_metrics(y_test.round(), y_pred, y_pred_scores)
 
