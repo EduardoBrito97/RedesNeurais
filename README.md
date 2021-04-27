@@ -14,3 +14,6 @@
 * [Link](https://www.overleaf.com/8743317796brjthbnkyxts) para o relatório em Latex
 
 * [Link](https://docs.google.com/presentation/d/1Ypvxuh4RGaAZu6wZp1_LXQimJZr0RbtDwFVK109RK4c/edit?usp=sharing) para a apresentação.
+
+## Projetão- Análise de Risco de Crédito
+* [Link](https://docs.google.com/presentation/d/1WUFGV9WYTMjfyxwLAPh2iys1L_wUuN1VApbj6dW5rSg/edit?usp=sharing) para a apresentação.
