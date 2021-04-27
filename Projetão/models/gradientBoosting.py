@@ -14,8 +14,7 @@ from matplotlib import pyplot as plt
 
 import seaborn as sns
 
-def compute_performance_metrics(y, y_pred_class, y_pred_scores=None, estimator = None, depth = None):
-
+def compute_performance_metrics(y, y_pred_class, y_pred_scores=None, base_name = None):
     mse = mean_squared_error(y, y_pred_class)
     accuracy = accuracy_score(y, y_pred_class)
     recall = recall_score(y, y_pred_class)
@@ -24,7 +23,7 @@ def compute_performance_metrics(y, y_pred_class, y_pred_scores=None, estimator =
     performance_metrics = (mse, accuracy, recall, precision, f1)
     if y_pred_scores is not None:
         skplt.metrics.plot_ks_statistic(y, y_pred_scores)
-        plt.savefig('../results/randomForest/plots/Estimator-' + str(estimator) + '_depth-' + str(depth) + '_KS.png')
+        plt.savefig('../results/gradient_boosting/plots/' + base_name + '_KS.png')
         plt.clf()
         y_pred_scores = y_pred_scores[:, 1]
         auroc = roc_auc_score(y, y_pred_scores)
@@ -58,22 +57,50 @@ def get_data(path_atributes, path_labels):
 X_train, y_train = get_data('../data/X_train_over.csv', '../data/y_train_over.csv')
 X_test, y_test = get_data('../data/X_test.csv', '../data/y_test.csv')
 
-## inicializar um classificador (daqui pra baixo é padrão pra todos classificadores do scikitlearn)
-gbc = GradientBoostingClassifier(n_estimators=10)
+estimators = [10, 50, 100]
+learning_rates = [0.1, 0.001, 0.00001, 0.0000001]
+subsamples = [0.1, 0.5, 1.0]
+
 ## quantos folds no cross-validation e o tamanho do fold de test
 cv = ShuffleSplit(n_splits=5, test_size=0.33, random_state=0)
-## faz o cross-validation e guarda cada modelo (5 folds, 5 treinos, 5 modelos)
-## o y.round() é feito pois o python reclama dos números quebrados, i.e., 1.0 ou 0.0; mas como temos um problema de classificação, o .round() não prejudica em nada a solução
-scores = cross_validate(gbc, X_train, y_train.round(), cv=cv, return_estimator=True)
 
-## pega o modelo que obteve o melhor score (o método de score default é accuracy)
-bestGbc = scores['estimator'][np.argmax(scores['test_score'])]
-## faz predição
-y_pred = bestGbc.predict(X_test)
-y_pred_scores = bestGbc.predict_proba(X_test)
-## as funções abaixo foram copiadas do github que o proferssor indica no site, exceto pela parte de mse e matriz de confusão
-mse, accuracy, recall, precision, f1, auroc, aupr = compute_performance_metrics(y_test.round(), y_pred, y_pred_scores)
-print('Performance no conjunto de teste:')
-print_metrics_summary(mse, accuracy, recall, precision, f1, auroc, aupr)
-plot_confusion_matrix(bestGbc, X_test, y_test.round())
-plt.show()
+results = {'EST': [], 'LR': [], 'SUBSAMP':[], 'MSE': [], 'ACC': [], 'REC': [], 'PREC': [], 'F1': [], 'AUROC': [], 'AUPR': []}
+for estimator in estimators:
+    for lr in learning_rates:
+        for subsample in subsamples:
+            ## inicializar um classificador (daqui pra baixo é padrão pra todos classificadores do scikitlearn)
+            gbc = GradientBoostingClassifier(n_estimators=estimator, learning_rate=lr, subsample=subsample)
+            
+            ## faz o cross-validation e guarda cada modelo (5 folds, 5 treinos, 5 modelos)
+            ## o y.round() é feito pois o python reclama dos números quebrados, i.e., 1.0 ou 0.0; mas como temos um problema de classificação, o .round() não prejudica em nada a solução
+            scores = cross_validate(gbc, X_train, y_train.round(), cv=cv, return_estimator=True)
+
+            ## pega o modelo que obteve o melhor score (o método de score default é accuracy)
+            bestGbc = scores['estimator'][np.argmax(scores['test_score'])]
+            ## faz predição
+            y_pred = bestGbc.predict(X_test)
+            y_pred_scores = bestGbc.predict_proba(X_test)
+            
+            base_name = "est-" + str(estimator) + "_lr-" + str(lr*1000000) + "_subsample-" + str(subsample)
+            
+            ## as funções abaixo foram copiadas do github que o proferssor indica no site, exceto pela parte de mse e matriz de confusão
+            mse, accuracy, recall, precision, f1, auroc, aupr = compute_performance_metrics(y_test.round(), y_pred, y_pred_scores, base_name)
+            results['EST'].append(estimator)
+            results['LR'].append(lr)
+            results['SUBSAMP'].append(subsample)
+            results['MSE'].append(mse)
+            results['ACC'].append(accuracy)
+            results['REC'].append(recall)
+            results['PREC'].append(precision)
+            results['F1'].append(f1)
+            results['AUROC'].append(auroc)
+            results['AUPR'].append(aupr)
+
+            print('Performance no conjunto de teste ' + base_name + ': ')        
+            print_metrics_summary(mse, accuracy, recall, precision, f1, auroc, aupr)
+            plot_confusion_matrix(bestGbc, X_test, y_test.round())
+            plt.savefig('../results/gradient_boosting/plots/' + base_name + '_matrix.png')
+            plt.clf()
+
+data = pd.DataFrame(results)
+data.to_csv('../results/gradient_boosting/results.csv', index=False, float_format='%.4f')
